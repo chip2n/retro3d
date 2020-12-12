@@ -57,11 +57,11 @@ fn main() {
         let dt = current_time.duration_since(last_time).as_millis() as f32;
         last_time = current_time;
 
-        if window.is_key_down(Key::A) {
+        if window.is_key_down(Key::R) {
             player.rotation -= 1.0 / dt;
         }
 
-        if window.is_key_down(Key::S) {
+        if window.is_key_down(Key::T) {
             player.rotation += 1.0 / dt;
         }
 
