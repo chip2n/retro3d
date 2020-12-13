@@ -27,7 +27,7 @@ struct Player {
     look_dir: Vector,
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 struct Line {
     start: Point,
     end: Point,
@@ -127,7 +127,8 @@ fn main() {
                 .iter()
                 .map(|line| line.rotate(-rotation, player.position))
                 .map(|line| line.translate(map_offset));
-            draw_map(&mut buffer, projected_map);
+            let culled_map = cull(projected_map);
+            draw_map(&mut buffer, culled_map.into_iter());
             *pixel(&mut buffer, center.x as usize, center.y as usize) = 0xFFFFFF;
         }
 
@@ -212,4 +213,37 @@ fn rotate_vector(v: Vector, angle: f32) -> Vector {
 /// Calculate rotation between two normalized vectors
 fn rotation_between(v1: Vector, v2: Vector) -> f32 {
     v2.y.atan2(v2.x) - v1.y.atan2(v1.x)
+}
+
+/// Cull lines that are behind the "camera" (i.e. center of viewport)
+fn cull(lines: impl Iterator<Item = Line>) -> Vec<Line> {
+    let center_y = HEIGHT as f32 / 2.0;
+    lines
+        .filter(|line| line.start.y <= center_y || line.end.y <= center_y)
+        .map(|line| {
+            let k = (line.start.y - line.end.y) / (line.start.x - line.end.x);
+            let m = line.start.y - k * line.start.x;
+
+            let y1 = line.start.y;
+            let y2 = line.end.y;
+
+            if y1 > center_y {
+                let new_y = center_y;
+                let new_x = (new_y - m) / k;
+                Line {
+                    start: Point::new(new_x, new_y),
+                    end: line.end,
+                }
+            } else if y2 > center_y {
+                let new_y = center_y;
+                let new_x = (new_y - m) / k;
+                Line {
+                    start: line.start,
+                    end: Point::new(new_x, new_y),
+                }
+            } else {
+                line
+            }
+        })
+        .collect()
 }
