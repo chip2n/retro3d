@@ -15,6 +15,7 @@ const TURN_RATE: f32 = 1.5 * math::PI;
 
 type Buffer = [u32];
 type Point = Vector;
+type Map = Vec<Line>;
 
 struct Player {
     position: Point,
@@ -27,7 +28,7 @@ struct Line {
     end: Point,
 }
 
-fn build_map() -> Vec<Line> {
+fn build_map() -> Map {
     vec![Line {
         start: Vector::new(40.0, 20.0),
         end: Point::new(80.0, 20.0),
@@ -81,20 +82,26 @@ fn main() {
             player.look_dir = rotate_vector(player.look_dir, TURN_RATE * dt)
         }
 
-        for i in buffer.iter_mut() {
-            *i = 0xFF0000FF;
-        }
-
-        for line in map.iter() {
-            draw_line(&mut buffer, &line);
-        }
-
+        clear(&mut buffer);
+        draw_map(&mut buffer, &map);
         draw_player(&mut buffer, &player);
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
 }
 
-fn draw_player(buffer: &mut [u32], player: &Player) {
+fn clear(buffer: &mut Buffer) {
+    for i in buffer.iter_mut() {
+        *i = 0xFF0000FF;
+    }
+}
+
+fn draw_map(buffer: &mut Buffer, map: &Map) {
+    for line in map.iter() {
+        draw_line(buffer, &line);
+    }
+}
+
+fn draw_player(buffer: &mut Buffer, player: &Player) {
     draw_arrow(buffer, player.position, player.look_dir);
     *pixel(
         buffer,
@@ -123,7 +130,7 @@ fn draw_arrow(buffer: &mut Buffer, origin: Point, direction: Vector) {
     draw_line(buffer, &right_line);
 }
 
-fn draw_line(buffer: &mut [u32], line: &Line) {
+fn draw_line(buffer: &mut Buffer, line: &Line) {
     let start = (line.start.x as isize, line.start.y as isize);
     let end = (line.end.x as isize, line.end.y as isize);
 
@@ -133,7 +140,7 @@ fn draw_line(buffer: &mut [u32], line: &Line) {
     }
 }
 
-fn pixel(buffer: &mut [u32], x: usize, y: usize) -> &mut u32 {
+fn pixel(buffer: &mut Buffer, x: usize, y: usize) -> &mut u32 {
     &mut buffer[(y * WIDTH) + x]
 }
 
