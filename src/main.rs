@@ -134,7 +134,9 @@ fn draw_line(buffer: &mut Buffer, line: &Line) {
     let start = (line.start.x as isize, line.start.y as isize);
     let end = (line.end.x as isize, line.end.y as isize);
 
-    let coords = Bresenham::new(start, end);
+    let coords = Bresenham::new(start, end)
+        .filter(|(x, y)| (0..WIDTH as isize).contains(x) && (0..HEIGHT as isize).contains(y));
+
     for (x, y) in coords {
         *pixel(buffer, x as usize, y as usize) = 0x00FF00;
     }
