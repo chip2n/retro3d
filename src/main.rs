@@ -139,23 +139,14 @@ fn draw_map(buffer: &mut Buffer, map: impl Iterator<Item = Line>) {
 }
 
 fn draw_arrow(buffer: &mut Buffer, origin: Point, direction: Vector) {
-    let end = origin + direction * 10.0;
+    let base_end = origin + direction * 10.0;
 
-    let line = Line { start: origin, end };
+    let left_wing_end = base_end - 6.0 * rotate_vector(direction, (45.0 as f32).to_radians());
+    let right_wing_end = base_end - 6.0 * rotate_vector(direction, (-45.0 as f32).to_radians());
 
-    let left_line = Line {
-        start: end,
-        end: end - 6.0 * rotate_vector(direction, (45.0 as f32).to_radians()),
-    };
-
-    let right_line = Line {
-        start: end,
-        end: end - 6.0 * rotate_vector(direction, (-45.0 as f32).to_radians()),
-    };
-
-    draw_line(buffer, line.start, line.end);
-    draw_line(buffer, left_line.start, left_line.end);
-    draw_line(buffer, right_line.start, right_line.end);
+    draw_line(buffer, origin, base_end);
+    draw_line(buffer, base_end, left_wing_end);
+    draw_line(buffer, base_end, right_wing_end);
 }
 
 fn draw_line(buffer: &mut Buffer, start: Point, end: Point) {
