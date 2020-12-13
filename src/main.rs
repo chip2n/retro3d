@@ -8,8 +8,10 @@ use std::time::Instant;
 const WIDTH: usize = 240;
 const HEIGHT: usize = 160;
 
+const SPEED: f32 = 40.0;
+
 /// Player's turn rate in radians per second
-const TURN_RATE: f32 = 2.0 * math::PI;
+const TURN_RATE: f32 = 1.5 * math::PI;
 
 type Buffer = [u32];
 type Point = Vector;
@@ -63,11 +65,18 @@ fn main() {
         let dt = current_time.duration_since(last_time).as_secs_f32();
         last_time = current_time;
 
+        if window.is_key_down(Key::F) {
+            player.position += player.look_dir * SPEED * dt;
+        }
+
+        if window.is_key_down(Key::S) {
+            player.position -= player.look_dir * SPEED * dt;
+        }
+
         if window.is_key_down(Key::R) {
             player.look_dir = rotate_vector(player.look_dir, -TURN_RATE * dt);
         }
 
-        dbg!(dt, TURN_RATE * dt);
         if window.is_key_down(Key::T) {
             player.look_dir = rotate_vector(player.look_dir, TURN_RATE * dt)
         }

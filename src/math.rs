@@ -25,6 +25,12 @@ impl ops::Add<Vector> for Vector {
     }
 }
 
+impl ops::AddAssign<Vector> for Vector {
+    fn add_assign(&mut self, other: Vector) {
+        *self = *self + other;
+    }
+}
+
 impl ops::Sub<Vector> for Vector {
     type Output = Self;
 
@@ -33,6 +39,12 @@ impl ops::Sub<Vector> for Vector {
             x: self.x - rhs.x,
             y: self.y - rhs.y,
         }
+    }
+}
+
+impl ops::SubAssign<Vector> for Vector {
+    fn sub_assign(&mut self, other: Vector) {
+        *self = *self - other;
     }
 }
 
