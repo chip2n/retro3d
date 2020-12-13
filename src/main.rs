@@ -13,7 +13,6 @@ type Point = Vector;
 
 struct Player {
     position: Point,
-    rotation: f32,
     look_dir: Vector,
 }
 
@@ -51,7 +50,6 @@ fn main() {
 
     let mut player = Player {
         position: Vector::new(50.0, 50.0),
-        rotation: 20.0,
         look_dir: Vector::new(0.0, -1.0),
     };
     let map = build_map();
@@ -63,12 +61,10 @@ fn main() {
         last_time = current_time;
 
         if window.is_key_down(Key::R) {
-            player.rotation -= 1.0 / dt;
             player.look_dir = rotate_vector(player.look_dir, (-5.0 as f32).to_radians());
         }
 
         if window.is_key_down(Key::T) {
-            player.rotation += 1.0 / dt;
             player.look_dir = rotate_vector(player.look_dir, (5.0 as f32).to_radians());
         }
 
