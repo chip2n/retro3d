@@ -18,7 +18,7 @@ impl Vector {
     }
 
     pub fn up() -> Self {
-        Vector { x: 0.0, y: 1.0 }
+        Vector { x: 0.0, y: -1.0 }
     }
 }
 

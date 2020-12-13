@@ -112,11 +112,10 @@ fn main() {
 
         // render world
         {
-            let look = Vector::new(player.look_dir.x, -player.look_dir.y);
-            let rotation = rotation_between(Vector::up(), look);
+            let rotation = rotation_between(Vector::up(), player.look_dir);
             let projected_map = map
                 .iter()
-                .map(|line| line.rotate(rotation, player.position))
+                .map(|line| line.rotate(-rotation, player.position))
                 .map(|line| line.translate(map_offset));
             draw_map(&mut buffer, projected_map);
             *pixel(&mut buffer, center.x as usize, center.y as usize) = 0xFFFFFF;
