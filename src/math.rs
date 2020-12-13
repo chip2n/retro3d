@@ -1,5 +1,7 @@
 use std::ops;
 
+pub use std::f32::consts::PI;
+
 #[derive(Copy, Clone, Debug)]
 pub struct Vector {
     pub x: f32,
