@@ -11,7 +11,7 @@ const HEIGHT: usize = 160;
 const SPEED: f32 = 40.0;
 
 /// Player's turn rate in radians per second
-const TURN_RATE: f32 = 1.5 * math::PI;
+const TURN_RATE: f32 = 1.0 * math::PI;
 
 type Buffer = [u32];
 type Point = Vector;
