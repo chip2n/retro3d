@@ -36,6 +36,13 @@ impl Line {
         }
     }
 
+    fn rotate(&self, angle: f32, origin: Point) -> Self {
+        Line {
+            start: rotate_vector(self.start - origin, angle) + origin,
+            end: rotate_vector(self.end - origin, angle) + origin,
+        }
+    }
+
     fn scale(&self, scale: f32) -> Self {
         Line {
             start: self.start * scale,
@@ -105,9 +112,13 @@ fn main() {
 
         // render world
         {
-            let translated_map = map.iter().map(|line| line.translate(map_offset));
-            draw_map(&mut buffer, translated_map);
-            draw_arrow(&mut buffer, center, player.look_dir);
+            let look = Vector::new(player.look_dir.x, -player.look_dir.y);
+            let rotation = rotation_between(Vector::up(), look);
+            let projected_map = map
+                .iter()
+                .map(|line| line.rotate(rotation, player.position))
+                .map(|line| line.translate(map_offset));
+            draw_map(&mut buffer, projected_map);
             *pixel(&mut buffer, center.x as usize, center.y as usize) = 0xFFFFFF;
         }
 
@@ -172,4 +183,9 @@ fn rotate_vector(v: Vector, angle: f32) -> Vector {
     let y2 = angle.sin() * x1 + angle.cos() * y1;
 
     Vector::new(x2, y2)
+}
+
+/// Calculate rotation between two normalized vectors
+fn rotation_between(v1: Vector, v2: Vector) -> f32 {
+    v2.y.atan2(v2.x) - v1.y.atan2(v1.x)
 }

@@ -16,6 +16,10 @@ impl Vector {
     pub fn zero() -> Self {
         Vector { x: 0.0, y: 0.0 }
     }
+
+    pub fn up() -> Self {
+        Vector { x: 0.0, y: 1.0 }
+    }
 }
 
 impl ops::Add<Vector> for Vector {
