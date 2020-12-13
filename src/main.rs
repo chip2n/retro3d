@@ -118,7 +118,7 @@ fn main() {
             draw_map(&mut buffer, scaled_map);
 
             let player_pos = player.position * scale;
-            draw_line(&mut buffer, &Line { start: player_pos, end: player_pos + player.look_dir * 5.0 });
+            draw_line(&mut buffer, player_pos, player_pos + player.look_dir * 5.0);
             *pixel(&mut buffer, player_pos.x as usize, player_pos.y as usize) = 0xFFFFFF;
         }
 
@@ -134,7 +134,7 @@ fn clear(buffer: &mut Buffer) {
 
 fn draw_map(buffer: &mut Buffer, map: impl Iterator<Item = Line>) {
     for line in map {
-        draw_line(buffer, &line);
+        draw_line(buffer, line.start, line.end);
     }
 }
 
@@ -153,14 +153,14 @@ fn draw_arrow(buffer: &mut Buffer, origin: Point, direction: Vector) {
         end: end - 6.0 * rotate_vector(direction, (-45.0 as f32).to_radians()),
     };
 
-    draw_line(buffer, &line);
-    draw_line(buffer, &left_line);
-    draw_line(buffer, &right_line);
+    draw_line(buffer, line.start, line.end);
+    draw_line(buffer, left_line.start, left_line.end);
+    draw_line(buffer, right_line.start, right_line.end);
 }
 
-fn draw_line(buffer: &mut Buffer, line: &Line) {
-    let start = (line.start.x as isize, line.start.y as isize);
-    let end = (line.end.x as isize, line.end.y as isize);
+fn draw_line(buffer: &mut Buffer, start: Point, end: Point) {
+    let start = (start.x as isize, start.y as isize);
+    let end = (end.x as isize, end.y as isize);
 
     let coords = Bresenham::new(start, end)
         .filter(|(x, y)| (0..WIDTH as isize).contains(x) && (0..HEIGHT as isize).contains(y));
