@@ -28,6 +28,15 @@ struct Line {
     end: Point,
 }
 
+impl Line {
+    fn translate(&self, offset: Vector) -> Self {
+        Line {
+            start: self.start + offset,
+            end: self.end + offset,
+        }
+    }
+}
+
 fn build_map() -> Map {
     vec![Line {
         start: Vector::new(40.0, 20.0),
@@ -83,8 +92,12 @@ fn main() {
         }
 
         clear(&mut buffer);
-        draw_map(&mut buffer, &map);
-        draw_player(&mut buffer, &player);
+
+        let center = Vector::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0);
+        let map_offset = center - player.position;
+
+        draw_map(&mut buffer, &map, map_offset);
+        draw_player(&mut buffer, center, player.look_dir);
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
 }
@@ -95,18 +108,19 @@ fn clear(buffer: &mut Buffer) {
     }
 }
 
-fn draw_map(buffer: &mut Buffer, map: &Map) {
+fn draw_map(buffer: &mut Buffer, map: &Map, offset: Vector) {
     for line in map.iter() {
+        let line = line.translate(offset);
         draw_line(buffer, &line);
     }
 }
 
-fn draw_player(buffer: &mut Buffer, player: &Player) {
-    draw_arrow(buffer, player.position, player.look_dir);
+fn draw_player(buffer: &mut Buffer, position: Point, look_dir: Vector) {
+    draw_arrow(buffer, position, look_dir);
     *pixel(
         buffer,
-        player.position.x as usize,
-        player.position.y as usize,
+        position.x as usize,
+        position.y as usize,
     ) = 0xFFFFFF;
 }
 
