@@ -1,19 +1,23 @@
-use std::time::Instant;
+mod math;
 
 use bresenham::Bresenham;
+use math::Vector;
 use minifb::{Key, Scale, Window, WindowOptions};
+use std::time::Instant;
 
 const WIDTH: usize = 240;
 const HEIGHT: usize = 160;
 
 type Buffer = [u32];
-type Point = (usize, usize);
+type Point = Vector;
 
 struct Player {
     position: Point,
     rotation: f32,
+    look_dir: Vector,
 }
 
+#[derive(Debug)]
 struct Line {
     start: Point,
     end: Point,
@@ -21,8 +25,8 @@ struct Line {
 
 fn build_map() -> Vec<Line> {
     vec![Line {
-        start: (40, 20),
-        end: (80, 20),
+        start: Vector::new(40.0, 20.0),
+        end: Point::new(80.0, 20.0),
     }]
 }
 
@@ -46,8 +50,9 @@ fn main() {
     window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
 
     let mut player = Player {
-        position: (50, 50),
+        position: Vector::new(50.0, 50.0),
         rotation: 20.0,
+        look_dir: Vector::new(0.0, -1.0),
     };
     let map = build_map();
 
@@ -59,10 +64,12 @@ fn main() {
 
         if window.is_key_down(Key::R) {
             player.rotation -= 1.0 / dt;
+            player.look_dir = rotate_vector(player.look_dir, (-5.0 as f32).to_radians());
         }
 
         if window.is_key_down(Key::T) {
             player.rotation += 1.0 / dt;
+            player.look_dir = rotate_vector(player.look_dir, (5.0 as f32).to_radians());
         }
 
         for i in buffer.iter_mut() {
@@ -79,60 +86,53 @@ fn main() {
 }
 
 fn draw_player(buffer: &mut [u32], player: &Player) {
-    draw_arrow(buffer, player.position, player.rotation);
-    *pixel(buffer, player.position) = 0xFFFFFF;
+    draw_arrow(buffer, player.position, player.look_dir);
+    *pixel(
+        buffer,
+        player.position.x as usize,
+        player.position.y as usize,
+    ) = 0xFFFFFF;
 }
 
-fn draw_arrow(buffer: &mut Buffer, start: Point, rot: f32) {
-    let end = (start.0, start.1 - 10);
-    let origin_line = Line { start, end };
+fn draw_arrow(buffer: &mut Buffer, origin: Point, direction: Vector) {
+    let end = origin + direction * 10.0;
+
+    let line = Line { start: origin, end };
+
     let left_line = Line {
         start: end,
-        end: (end.0 - 4, end.1 + 4),
-    };
-    let right_line = Line {
-        start: end,
-        end: (end.0 + 4, end.1 + 4),
+        end: end - 6.0 * rotate_vector(direction, (45.0 as f32).to_radians()),
     };
 
-    draw_line(buffer, &rotate_line(&origin_line, rot, start));
-    draw_line(buffer, &rotate_line(&left_line, rot, start));
-    draw_line(buffer, &rotate_line(&right_line, rot, start));
+    let right_line = Line {
+        start: end,
+        end: end - 6.0 * rotate_vector(direction, (-45.0 as f32).to_radians()),
+    };
+
+    draw_line(buffer, &line);
+    draw_line(buffer, &left_line);
+    draw_line(buffer, &right_line);
 }
 
 fn draw_line(buffer: &mut [u32], line: &Line) {
-    let start = (line.start.0 as isize, line.start.1 as isize);
-    let end = (line.end.0 as isize, line.end.1 as isize);
+    let start = (line.start.x as isize, line.start.y as isize);
+    let end = (line.end.x as isize, line.end.y as isize);
 
     let coords = Bresenham::new(start, end);
     for (x, y) in coords {
-        *pixel(buffer, (x as usize, y as usize)) = 0x00FF00;
+        *pixel(buffer, x as usize, y as usize) = 0x00FF00;
     }
 }
 
-fn pixel(buffer: &mut [u32], point: Point) -> &mut u32 {
-    &mut buffer[(point.1 as usize * WIDTH) + point.0 as usize]
+fn pixel(buffer: &mut [u32], x: usize, y: usize) -> &mut u32 {
+    &mut buffer[(y * WIDTH) + x]
 }
 
-fn rotate_line(line: &Line, angle: f32, origin: Point) -> Line {
-    Line {
-        start: rotate_point(line.start, angle, origin),
-        end: rotate_point(line.end, angle, origin),
-    }
-}
-
-fn rotate_point(point: Point, angle: f32, origin: Point) -> Point {
-    let (x, y) = (point.0 as f32, point.1 as f32);
-    let (origin_x, origin_y) = (origin.0 as f32, origin.1 as f32);
-
-    let x1 = x - origin_x;
-    let y1 = y - origin_y;
+fn rotate_vector(v: Vector, angle: f32) -> Vector {
+    let (x1, y1) = (v.x, v.y);
 
     let x2 = angle.cos() * x1 - angle.sin() * y1;
     let y2 = angle.sin() * x1 + angle.cos() * y1;
 
-    (
-        (origin_x + x2).round() as usize,
-        (origin_y + y2).round() as usize,
-    )
+    Vector::new(x2, y2)
 }
