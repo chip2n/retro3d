@@ -12,6 +12,10 @@ impl Vector {
     pub fn new(x: f32, y: f32) -> Self {
         Vector { x, y }
     }
+
+    pub fn zero() -> Self {
+        Vector { x: 0.0, y: 0.0 }
+    }
 }
 
 impl ops::Add<Vector> for Vector {

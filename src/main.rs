@@ -35,6 +35,13 @@ impl Line {
             end: self.end + offset,
         }
     }
+
+    fn scale(&self, scale: f32) -> Self {
+        Line {
+            start: self.start * scale,
+            end: self.end * scale,
+        }
+    }
 }
 
 fn build_map() -> Map {
@@ -96,8 +103,25 @@ fn main() {
         let center = Vector::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0);
         let map_offset = center - player.position;
 
-        draw_map(&mut buffer, &map, map_offset);
-        draw_player(&mut buffer, center, player.look_dir);
+        // render world
+        {
+            let translated_map = map.iter().map(|line| line.translate(map_offset));
+            draw_map(&mut buffer, translated_map);
+            draw_arrow(&mut buffer, center, player.look_dir);
+            *pixel(&mut buffer, center.x as usize, center.y as usize) = 0xFFFFFF;
+        }
+
+        // render minimap
+        {
+            let scale = 0.5;
+            let scaled_map = map.iter().map(|line| line.scale(scale));
+            draw_map(&mut buffer, scaled_map);
+
+            let player_pos = player.position * scale;
+            draw_line(&mut buffer, &Line { start: player_pos, end: player_pos + player.look_dir * 5.0 });
+            *pixel(&mut buffer, player_pos.x as usize, player_pos.y as usize) = 0xFFFFFF;
+        }
+
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
 }
@@ -108,20 +132,10 @@ fn clear(buffer: &mut Buffer) {
     }
 }
 
-fn draw_map(buffer: &mut Buffer, map: &Map, offset: Vector) {
-    for line in map.iter() {
-        let line = line.translate(offset);
+fn draw_map(buffer: &mut Buffer, map: impl Iterator<Item = Line>) {
+    for line in map {
         draw_line(buffer, &line);
     }
-}
-
-fn draw_player(buffer: &mut Buffer, position: Point, look_dir: Vector) {
-    draw_arrow(buffer, position, look_dir);
-    *pixel(
-        buffer,
-        position.x as usize,
-        position.y as usize,
-    ) = 0xFFFFFF;
 }
 
 fn draw_arrow(buffer: &mut Buffer, origin: Point, direction: Vector) {
