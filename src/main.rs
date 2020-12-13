@@ -15,7 +15,12 @@ const TURN_RATE: f32 = 1.5 * math::PI;
 
 type Buffer = [u32];
 type Point = Vector;
-type Map = Vec<Line>;
+
+struct Map {
+    walls: Vec<Line>,
+    width: usize,
+    height: usize,
+}
 
 struct Player {
     position: Point,
@@ -52,10 +57,14 @@ impl Line {
 }
 
 fn build_map() -> Map {
-    vec![Line {
-        start: Vector::new(40.0, 20.0),
-        end: Point::new(80.0, 20.0),
-    }]
+    Map {
+        width: 100,
+        height: 100,
+        walls: vec![Line {
+            start: Vector::new(40.0, 20.0),
+            end: Point::new(80.0, 20.0),
+        }],
+    }
 }
 
 fn main() {
@@ -114,6 +123,7 @@ fn main() {
         {
             let rotation = rotation_between(Vector::up(), player.look_dir);
             let projected_map = map
+                .walls
                 .iter()
                 .map(|line| line.rotate(-rotation, player.position))
                 .map(|line| line.translate(map_offset));
@@ -124,7 +134,14 @@ fn main() {
         // render minimap
         {
             let scale = 0.5;
-            let scaled_map = map.iter().map(|line| line.scale(scale));
+            draw_rect(
+                &mut buffer,
+                0,
+                0,
+                (map.width as f32 * scale) as usize,
+                (map.height as f32 * scale) as usize,
+            );
+            let scaled_map = map.walls.iter().map(|line| line.scale(scale));
             draw_map(&mut buffer, scaled_map);
 
             let player_pos = player.position * scale;
@@ -168,6 +185,14 @@ fn draw_line(buffer: &mut Buffer, start: Point, end: Point) {
 
     for (x, y) in coords {
         *pixel(buffer, x as usize, y as usize) = 0x00FF00;
+    }
+}
+
+fn draw_rect(buffer: &mut Buffer, x: usize, y: usize, width: usize, height: usize) {
+    for y in 0..height {
+        for x in 0..width {
+            *pixel(buffer, x, y) = 0x000000;
+        }
     }
 }
 
