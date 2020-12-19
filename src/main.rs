@@ -60,10 +60,16 @@ fn build_map() -> Map {
     Map {
         width: 100,
         height: 100,
-        walls: vec![Line {
-            start: Vector::new(40.0, 20.0),
-            end: Point::new(80.0, 20.0),
-        }],
+        walls: vec![
+            Line {
+                start: Point::new(40.0, 20.0),
+                end: Point::new(80.0, 20.0),
+            },
+            Line {
+                start: Point::new(80.0, 20.0),
+                end: Point::new(100.0, 40.0),
+            },
+        ],
     }
 }
 
@@ -128,7 +134,118 @@ fn main() {
                 .map(|line| line.rotate(-rotation, player.position))
                 .map(|line| line.translate(map_offset));
             let culled_map = cull(projected_map);
-            draw_map(&mut buffer, culled_map.into_iter());
+            let map = culled_map
+                .into_iter()
+                .map(|line| {
+                    // project to player space
+                    let t = line.translate(-center);
+                    Line {
+                        start: t.start.with_y(-t.start.y),
+                        end: t.end.with_y(-t.end.y),
+                    }
+                })
+                .map(|line| {
+                    let (start, end) = (line.start, line.end);
+
+                    let start_distance = start.y;
+                    let end_distance = end.y;
+
+                    let new_start = if start_distance == 0.0 {
+                        let new_x = if start.x <= 0.0 {
+                            -center.x
+                        } else {
+                            center.x
+                        };
+                        start.with_x(new_x)
+                    } else {
+                        let new_x = start.x / start_distance;
+                        start.with_x(new_x)
+                    };
+
+                    let new_end = if end_distance == 0.0 {
+                        let new_x = if end.x <= 0.0 {
+                            -center.x
+                        } else {
+                            center.x
+                        };
+                        end.with_x(new_x)
+                    } else {
+                        let new_x = end.x / end_distance;
+                        end.with_x(new_x)
+                    };
+
+                    let result = Line {
+                        start: new_start,
+                        end: new_end,
+                    };
+
+                    dbg!("in", line);
+                    dbg!("out", result);
+
+                    result
+                })
+                .map(|line| Line {
+                    start: line.start.with_x(line.start.x * 20.0),
+                    end: line.end.with_x(line.end.x * 20.0),
+                })
+                .map(|line| {
+                    // project to screen space
+                    let t = Line {
+                        start: line.start.with_y(-line.start.y),
+                        end: line.end.with_y(-line.end.y),
+                    };
+                    t.translate(center)
+                });
+            /*
+            .map(|line| {
+                let (start, end) = (line.start, line.end);
+                let center_y = HEIGHT as f32 / 2.0;
+                let center_x = WIDTH as f32 / 2.0;
+
+                let start_distance = center_y - start.y;
+                let end_distance = center_y - end.y;
+
+                assert!(start_distance >= 0.0);
+                assert!(end_distance >= 0.0);
+
+                // TODO the gif uses coordinate system with 0,0 at player
+                let new_start = if start_distance == 0.0 {
+                    start
+                /*
+                if start.x <= center_x {
+                    Point::new(0.0, end.y)
+                } else {
+                    Point::new(WIDTH as f32, end.y)
+                }
+                    */
+                } else {
+                    //let new_x = start.x / start_distance;
+                    let new_x = (start.x - center_x) / start_distance + center_x;
+                    start.with_x(new_x)
+                };
+
+                let new_end = if end_distance == 0.0 {
+                    /*
+                    if end.x <= center_x {
+                        Point::new(0.0, start.y)
+                    } else {
+                        Point::new(WIDTH as f32, start.y)
+                    }
+                    */
+                    end
+                } else {
+                    //let new_x = end.x / end_distance;
+                    let new_x = (end.x - center_x) / end_distance + center_x;
+                    end.with_x(new_x)
+                };
+
+                Line {
+                    start: new_start,
+                    end: new_end,
+                }
+            })
+            */
+            draw_map(&mut buffer, map);
             *pixel(&mut buffer, center.x as usize, center.y as usize) = 0xFFFFFF;
         }
 
@@ -190,9 +307,9 @@ fn draw_line(buffer: &mut Buffer, start: Point, end: Point) {
 }
 
 fn draw_rect(buffer: &mut Buffer, x: usize, y: usize, width: usize, height: usize) {
-    for y in 0..height {
-        for x in 0..width {
-            *pixel(buffer, x, y) = 0x000000;
+    for j in 0..height {
+        for i in 0..width {
+            *pixel(buffer, x + i, y + j) = 0x000000;
         }
     }
 }

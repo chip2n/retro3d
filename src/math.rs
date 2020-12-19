@@ -20,6 +20,14 @@ impl Vector {
     pub fn up() -> Self {
         Vector { x: 0.0, y: -1.0 }
     }
+
+    pub fn with_x(&self, x: f32) -> Self {
+        Vector { x, y: self.y }
+    }
+
+    pub fn with_y(&self, y: f32) -> Self {
+        Vector { x: self.x, y }
+    }
 }
 
 impl ops::Add<Vector> for Vector {
