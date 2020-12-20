@@ -122,6 +122,9 @@ fn main() {
 
         clear(&mut buffer);
 
+        // draw floor
+        draw_rect(&mut buffer, 0, HEIGHT / 2, WIDTH, HEIGHT / 2, 0xFF0000);
+
         let center = Vector::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0);
         let map_offset = center - player.position;
 
@@ -198,7 +201,12 @@ fn main() {
                         end: bottom_wall_line.end,
                     };
 
-                    vec![top_wall_line, bottom_wall_line, side_start_line, side_end_line]
+                    vec![
+                        top_wall_line,
+                        bottom_wall_line,
+                        side_start_line,
+                        side_end_line,
+                    ]
                 })
                 .map(|line| {
                     // project to screen space
@@ -221,6 +229,7 @@ fn main() {
                 0,
                 (map.width as f32 * scale) as usize,
                 (map.height as f32 * scale) as usize,
+                0x000000,
             );
             let scaled_map = map.walls.iter().map(|line| line.scale(scale));
             draw_map(&mut buffer, scaled_map);
@@ -269,10 +278,10 @@ fn draw_line(buffer: &mut Buffer, start: Point, end: Point) {
     }
 }
 
-fn draw_rect(buffer: &mut Buffer, x: usize, y: usize, width: usize, height: usize) {
+fn draw_rect(buffer: &mut Buffer, x: usize, y: usize, width: usize, height: usize, color: u32) {
     for j in 0..height {
         for i in 0..width {
-            *pixel(buffer, x + i, y + j) = 0x000000;
+            *pixel(buffer, x + i, y + j) = color;
         }
     }
 }
