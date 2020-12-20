@@ -1,9 +1,11 @@
 mod math;
+mod sutherland;
 
 use bresenham::Bresenham;
 use math::Vector;
 use minifb::{Key, Scale, Window, WindowOptions};
 use std::time::Instant;
+use sutherland::{clip_line, Rect};
 
 const WIDTH: usize = 240;
 const HEIGHT: usize = 160;
@@ -126,6 +128,13 @@ fn main() {
         draw_rect(&mut buffer, 0, HEIGHT / 2, WIDTH, HEIGHT / 2, 0xFF0000);
 
         let center = Vector::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0);
+        let screen_rect = Rect {
+            left: 0.0,
+            right: WIDTH as f32,
+            top: 0.0,
+            bottom: HEIGHT as f32,
+        };
+
         let map_offset = center - player.position;
 
         // render world
@@ -151,8 +160,8 @@ fn main() {
                     let (start, end) = (line.start, line.end);
 
                     // avoid division by zero
-                    let start_distance = start.y + 0.1;
-                    let end_distance = end.y + 0.1;
+                    let start_distance = start.y + 0.001;
+                    let end_distance = end.y + 0.001;
 
                     let result = Line {
                         start: start.with_x(start.x / start_distance),
@@ -174,17 +183,28 @@ fn main() {
                 let (start, end) = (line.start, line.end);
 
                 // avoid division by zero
-                let start_distance = start.y + 0.1;
-                let end_distance = end.y + 0.1;
+                let start_distance = start.y + 0.001;
+                let end_distance = end.y + 0.001;
 
                 let top_wall_line = project_screen(Line {
                     start: start.with_y(400.0 / start_distance),
                     end: end.with_y(400.0 / end_distance),
                 });
-                let bottom_wall_line = project_screen(Line {
-                    start: start.with_y(-400.0 / start_distance),
-                    end: end.with_y(-400.0 / end_distance),
-                });
+                let result = clip_line(top_wall_line.start, top_wall_line.end, &screen_rect);
+                if result.is_none() {
+                    continue;
+                }
+
+                let top_wall_line = Line {
+                    start: result.unwrap().0,
+                    end: result.unwrap().1,
+                };
+
+                // mirror top wall line
+                let bottom_wall_line = Line {
+                    start: top_wall_line.start.with_y(HEIGHT as f32 - top_wall_line.start.y),
+                    end: top_wall_line.end.with_y(HEIGHT as f32 - top_wall_line.end.y),
+                };
 
                 let i = line_between(top_wall_line.start, top_wall_line.end)
                     .zip(line_between(bottom_wall_line.start, bottom_wall_line.end));
@@ -242,7 +262,7 @@ fn draw_map(buffer: &mut Buffer, map: impl Iterator<Item = Line>) {
     }
 }
 
-fn line_between(start: Point, end: Point) -> impl Iterator<Item=(isize, isize)> {
+fn line_between(start: Point, end: Point) -> impl Iterator<Item = (isize, isize)> {
     let start = (start.x as isize, start.y as isize);
     let end = (end.x as isize, end.y as isize);
 

@@ -2,7 +2,7 @@ use std::ops;
 
 pub use std::f32::consts::PI;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Vector {
     pub x: f32,
     pub y: f32,
