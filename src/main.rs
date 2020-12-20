@@ -174,49 +174,35 @@ fn main() {
                 .map(|line| Line {
                     start: line.start.with_x(line.start.x * 70.0),
                     end: line.end.with_x(line.end.x * 70.0),
-                })
-                .flat_map(|line| {
-                    // extrude points based on camera distance
-                    let (start, end) = (line.start, line.end);
-
-                    // avoid division by zero
-                    let start_distance = start.y + 0.1;
-                    let end_distance = end.y + 0.1;
-
-                    let top_wall_line = Line {
-                        start: start.with_y(400.0 / start_distance),
-                        end: end.with_y(400.0 / end_distance),
-                    };
-                    let bottom_wall_line = Line {
-                        start: start.with_y(-400.0 / start_distance),
-                        end: end.with_y(-400.0 / end_distance),
-                    };
-                    let side_start_line = Line {
-                        start: top_wall_line.start,
-                        end: bottom_wall_line.start,
-                    };
-
-                    let side_end_line = Line {
-                        start: top_wall_line.end,
-                        end: bottom_wall_line.end,
-                    };
-
-                    vec![
-                        top_wall_line,
-                        bottom_wall_line,
-                        side_start_line,
-                        side_end_line,
-                    ]
-                })
-                .map(|line| {
-                    // project to screen space
-                    let t = Line {
-                        start: line.start.with_y(-line.start.y),
-                        end: line.end.with_y(-line.end.y),
-                    };
-                    t.translate(center)
                 });
-            draw_map(&mut buffer, map);
+
+            // draw map
+            for line in map {
+                // extrude points based on camera distance
+                let (start, end) = (line.start, line.end);
+
+                // avoid division by zero
+                let start_distance = start.y + 0.1;
+                let end_distance = end.y + 0.1;
+
+                let top_wall_line = project_screen(Line {
+                    start: start.with_y(400.0 / start_distance),
+                    end: end.with_y(400.0 / end_distance),
+                });
+                let bottom_wall_line = project_screen(Line {
+                    start: start.with_y(-400.0 / start_distance),
+                    end: end.with_y(-400.0 / end_distance),
+                });
+
+                let i = line_between(top_wall_line.start, top_wall_line.end)
+                    .zip(line_between(bottom_wall_line.start, bottom_wall_line.end));
+
+                for ((x1, y1), (x2, y2)) in i {
+                    for y in y1..y2 {
+                        *pixel(&mut buffer, x1 as usize, y as usize) = 0x00FF00;
+                    }
+                }
+            }
             *pixel(&mut buffer, center.x as usize, center.y as usize) = 0xFFFFFF;
         }
 
@@ -243,6 +229,15 @@ fn main() {
     }
 }
 
+fn project_screen(line: Line) -> Line {
+    let center = Vector::new(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0);
+    let line = Line {
+        start: line.start.with_y(-line.start.y),
+        end: line.end.with_y(-line.end.y),
+    };
+    line.translate(center)
+}
+
 fn clear(buffer: &mut Buffer) {
     for i in buffer.iter_mut() {
         *i = 0xFF0000FF;
@@ -255,25 +250,16 @@ fn draw_map(buffer: &mut Buffer, map: impl Iterator<Item = Line>) {
     }
 }
 
-fn draw_arrow(buffer: &mut Buffer, origin: Point, direction: Vector) {
-    let base_end = origin + direction * 10.0;
-
-    let left_wing_end = base_end - 6.0 * rotate_vector(direction, (45.0 as f32).to_radians());
-    let right_wing_end = base_end - 6.0 * rotate_vector(direction, (-45.0 as f32).to_radians());
-
-    draw_line(buffer, origin, base_end);
-    draw_line(buffer, base_end, left_wing_end);
-    draw_line(buffer, base_end, right_wing_end);
-}
-
-fn draw_line(buffer: &mut Buffer, start: Point, end: Point) {
+fn line_between(start: Point, end: Point) -> impl Iterator<Item=(isize, isize)> {
     let start = (start.x as isize, start.y as isize);
     let end = (end.x as isize, end.y as isize);
 
-    let coords = Bresenham::new(start, end)
-        .filter(|(x, y)| (0..WIDTH as isize).contains(x) && (0..HEIGHT as isize).contains(y));
+    Bresenham::new(start, end)
+        .filter(|(x, y)| (0..WIDTH as isize).contains(x) && (0..HEIGHT as isize).contains(y))
+}
 
-    for (x, y) in coords {
+fn draw_line(buffer: &mut Buffer, start: Point, end: Point) {
+    for (x, y) in line_between(start, end) {
         *pixel(buffer, x as usize, y as usize) = 0x00FF00;
     }
 }
