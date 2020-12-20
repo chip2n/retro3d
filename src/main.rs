@@ -154,30 +154,22 @@ fn main() {
                     let start_distance = start.y + 0.1;
                     let end_distance = end.y + 0.1;
 
-                    let new_start = {
-                        let new_x = start.x / start_distance;
-                        start.with_x(new_x)
-                    };
-
-                    let new_end = {
-                        let new_x = end.x / end_distance;
-                        end.with_x(new_x)
-                    };
-
                     let result = Line {
-                        start: new_start,
-                        end: new_end,
+                        start: start.with_x(start.x / start_distance),
+                        end: end.with_x(end.x / end_distance),
                     };
 
                     result
-                })
-                .map(|line| Line {
-                    start: line.start.with_x(line.start.x * 70.0),
-                    end: line.end.with_x(line.end.x * 70.0),
                 });
 
             // draw map
             for line in map {
+                // scale viewport
+                let line = Line {
+                    start: line.start.with_x(line.start.x * 70.0),
+                    end: line.end.with_x(line.end.x * 70.0),
+                };
+
                 // extrude points based on camera distance
                 let (start, end) = (line.start, line.end);
 
